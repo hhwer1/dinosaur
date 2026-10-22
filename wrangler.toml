@@ -1,0 +1,14 @@
+name = "studio-booking"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[assets]
+directory = "."
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "studio-booking-db"
+database_id = "请替换为 wrangler d1 create 返回的 database_id"
+
+# 部署前运行：npx wrangler secret put STAFF_PASSWORD
