@@ -9,6 +9,6 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "studio-booking-db"
-database_id = "请替换为 wrangler d1 create 返回的 database_id"
+database_id = "c8b1181d-c6df-4e22-9d20-774cbaf22201"
 
 # 部署前运行：npx wrangler secret put STAFF_PASSWORD
