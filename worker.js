@@ -8,7 +8,7 @@ function publicRow(row) {
 function validPayload(body) {
   return allowedStudios.has(body.studio) && /^\d{4}-\d{2}-\d{2}$/.test(body.booking_date) &&
     Array.isArray(body.slots) && body.slots.length > 0 && body.slots.length <= 6 &&
-    body.slots.every(x => Number.isInteger(x) && x >= 0 && x <= 11) &&
+    body.slots.every(x => Number.isInteger(x) && x >= 0 && x <= 11) && String(body.applicant || '').trim().length > 0 &&
     (!body.assistant || String(body.reason || '').trim());
 }
 
@@ -41,8 +41,8 @@ export default {
         if (!validPayload(body)) return json({ error: '预约信息不完整或不合法' }, 400);
         if (await hasConflict(env, body)) return json({ error: '所选时间段刚刚已被预约，请刷新后重选' }, 409);
         const id = crypto.randomUUID(), ownerToken = crypto.randomUUID();
-        await env.DB.prepare('INSERT INTO bookings (id,studio,booking_date,slots,assistant,reason,note,owner_token) VALUES (?,?,?,?,?,?,?,?)')
-          .bind(id, body.studio, body.booking_date, JSON.stringify([...new Set(body.slots)].sort((a,b)=>a-b)), body.assistant ? 1 : 0, body.reason || '', body.note || '', ownerToken).run();
+        await env.DB.prepare('INSERT INTO bookings (id,studio,booking_date,slots,applicant,assistant,reason,note,owner_token) VALUES (?,?,?,?,?,?,?,?,?)')
+          .bind(id, body.studio, body.booking_date, JSON.stringify([...new Set(body.slots)].sort((a,b)=>a-b)), String(body.applicant).trim(), body.assistant ? 1 : 0, body.reason || '', body.note || '', ownerToken).run();
         return json({ id, ownerToken }, 201);
       }
       const match = url.pathname.match(/^\/api\/bookings\/([^/]+)$/);
@@ -58,8 +58,8 @@ export default {
         const body = await request.json();
         if (!validPayload(body)) return json({ error: '预约信息不完整或不合法' }, 400);
         if (await hasConflict(env, body, row.id)) return json({ error: '所选时间段已被预约，请重选' }, 409);
-        await env.DB.prepare("UPDATE bookings SET studio=?,booking_date=?,slots=?,assistant=?,reason=?,note=?,status='active',updated_at=CURRENT_TIMESTAMP WHERE id=?")
-          .bind(body.studio, body.booking_date, JSON.stringify([...new Set(body.slots)].sort((a,b)=>a-b)), body.assistant?1:0, body.reason||'', body.note||'', row.id).run();
+        await env.DB.prepare("UPDATE bookings SET studio=?,booking_date=?,slots=?,applicant=?,assistant=?,reason=?,note=?,status='active',updated_at=CURRENT_TIMESTAMP WHERE id=?")
+          .bind(body.studio, body.booking_date, JSON.stringify([...new Set(body.slots)].sort((a,b)=>a-b)), String(body.applicant).trim(), body.assistant?1:0, body.reason||'', body.note||'', row.id).run();
         return json({ ok: true });
       }
       return json({ error: 'Not found' }, 404);

@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   studio TEXT NOT NULL,
   booking_date TEXT NOT NULL,
   slots TEXT NOT NULL,
+  applicant TEXT NOT NULL DEFAULT '',
   assistant INTEGER NOT NULL DEFAULT 0,
   reason TEXT NOT NULL DEFAULT '',
   note TEXT NOT NULL DEFAULT '',
