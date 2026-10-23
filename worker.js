@@ -20,7 +20,7 @@ async function hasConflict(env, body, exceptId = '') {
 }
 
 function canManage(request, env, row, token) {
-  return true;
+  return Boolean(token) && token === row.owner_token;
 }
 
 export default {
@@ -31,10 +31,6 @@ export default {
       if (url.pathname === '/api/bookings' && request.method === 'GET') {
         const rows = await env.DB.prepare('SELECT * FROM bookings ORDER BY created_at').all();
         return json(rows.results.map(publicRow));
-      }
-      if (url.pathname === '/api/staff/login' && request.method === 'POST') {
-        const { password } = await request.json();
-        return password === env.STAFF_PASSWORD ? json({ ok: true }) : json({ error: '密码错误' }, 401);
       }
       if (url.pathname === '/api/bookings' && request.method === 'POST') {
         const body = await request.json();
