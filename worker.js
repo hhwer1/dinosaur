@@ -12,6 +12,14 @@ function validPayload(body) {
     (!body.assistant || String(body.reason || '').trim());
 }
 
+function sameDayOpen(bookingDate) {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
+  const values = Object.fromEntries(parts.filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
+  const today = `${values.year}-${values.month}-${values.day}`;
+  return bookingDate !== today || Number(values.hour) > 9 || (Number(values.hour) === 9 && Number(values.minute) >= 30);
+}
+
 async function hasConflict(env, body, exceptId = '') {
   const rows = await env.DB.prepare("SELECT id, slots FROM bookings WHERE studio=? AND booking_date=? AND status='active' AND id<>?")
     .bind(body.studio, body.booking_date, exceptId).all();
@@ -35,6 +43,7 @@ export default {
       if (url.pathname === '/api/bookings' && request.method === 'POST') {
         const body = await request.json();
         if (!validPayload(body)) return json({ error: '预约信息不完整或不合法' }, 400);
+        if (!sameDayOpen(body.booking_date)) return json({ error: '当天预约每天09:30开放' }, 400);
         if (await hasConflict(env, body)) return json({ error: '所选时间段刚刚已被预约，请刷新后重选' }, 409);
         const id = crypto.randomUUID(), ownerToken = crypto.randomUUID();
         await env.DB.prepare('INSERT INTO bookings (id,studio,booking_date,slots,applicant,assistant,reason,note,owner_token) VALUES (?,?,?,?,?,?,?,?,?)')
@@ -53,6 +62,7 @@ export default {
         }
         const body = await request.json();
         if (!validPayload(body)) return json({ error: '预约信息不完整或不合法' }, 400);
+        if (!sameDayOpen(body.booking_date)) return json({ error: '当天预约每天09:30开放' }, 400);
         if (await hasConflict(env, body, row.id)) return json({ error: '所选时间段已被预约，请重选' }, 409);
         await env.DB.prepare("UPDATE bookings SET studio=?,booking_date=?,slots=?,applicant=?,assistant=?,reason=?,note=?,status='active',updated_at=CURRENT_TIMESTAMP WHERE id=?")
           .bind(body.studio, body.booking_date, JSON.stringify([...new Set(body.slots)].sort((a,b)=>a-b)), String(body.applicant).trim(), body.assistant?1:0, body.reason||'', body.note||'', row.id).run();
