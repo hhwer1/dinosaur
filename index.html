@@ -27,7 +27,7 @@
   <script>
     const studios=[{name:'实景棚无影棚'},{name:'1806无影棚'},{name:'1801无影棚'}];
     const slots=['09:00—10:00','10:00—11:00','11:00—12:00','12:00—13:00','13:00—14:00','14:00—15:00','15:00—16:00','16:00—17:00','17:00—18:00','18:00—19:00','19:00—20:00','20:00—21:00'];
-    let selectedDate=new Date(2026,9,26),studioIndex=0,selected=[],editingIndex=null,cloudBookings=[]; const grid=document.getElementById('slotGrid');
+    let selectedDate=new Date(),studioIndex=0,selected=[],editingIndex=null,cloudBookings=[]; const grid=document.getElementById('slotGrid');
     const cloudReady=location.protocol.startsWith('http');
     const getBookings=()=>cloudReady?cloudBookings:JSON.parse(localStorage.getItem('studioBookings')||'[]');
     function dbDate(d){return dateKey(d)}
@@ -37,7 +37,7 @@
     function setSync(text,error=false){const el=document.getElementById('syncState');el.textContent=text;el.style.color=error?'#9c3f2d':'#397044';el.style.background=error?'#ffe0cf':'#edf6df'}
     async function initCloud(){if(!cloudReady){setSync('本地预览模式；部署到 Worker 后自动同步',true);return}await loadCloud();setInterval(loadCloud,15000)}
     function dateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-    function sameDayOpen(d){if(dateKey(d)!==dateKey(new Date()))return true;const now=new Date();return now.getHours()>9||(now.getHours()===9&&now.getMinutes()>=30)}
+    function sameDayOpen(d){if(dateKey(d)!==dateKey(new Date()))return false;const now=new Date();return now.getHours()>9||(now.getHours()===9&&now.getMinutes()>=30)}
     function fullDate(d){return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+['周日','周一','周二','周三','周四','周五','周六'][d.getDay()]}
     function renderCalendar(){const cal=document.getElementById('calendar'),y=selectedDate.getFullYear(),m=selectedDate.getMonth(),first=new Date(y,m,1).getDay(),count=new Date(y,m+1,0).getDate();cal.innerHTML=['日','一','二','三','四','五','六'].map(x=>'<div class="weekday">'+x+'</div>').join('')+'<div class="day empty"></div>'.repeat(first);for(let n=1;n<=count;n++){const d=new Date(y,m,n),weekend=d.getDay()===0||d.getDay()===6,closedToday=!sameDayOpen(d),active=dateKey(d)===dateKey(selectedDate),has=getBookings().some(x=>!x.cancelled&&x.studio===studios[studioIndex].name&&x.date===fullDate(d));cal.innerHTML+='<button type="button" class="day '+(weekend||closedToday?'weekend ':'')+(active?'active ':'')+(has?'has-booking':'')+'" data-date="'+dateKey(d)+'" '+(weekend||closedToday?'disabled':'')+'>'+n+'</button>'}cal.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{const p=b.dataset.date.split('-').map(Number);selectedDate=new Date(p[0],p[1]-1,p[2]);selected=[];render()})}
     function bookingSlots(booking){if(Array.isArray(booking.slots))return booking.slots;const found=[];String(booking.time||'').split('、').forEach(part=>{const exact=slots.indexOf(part);if(exact>=0){found.push(exact);return}const [start,end]=part.split('—'),a=slots.findIndex(x=>x.startsWith(start)),z=slots.findIndex(x=>x.endsWith(end));if(a>=0&&z>=a)for(let i=a;i<=z;i++)found.push(i)});return [...new Set(found)]}

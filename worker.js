@@ -17,7 +17,7 @@ function sameDayOpen(bookingDate) {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
   const values = Object.fromEntries(parts.filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
   const today = `${values.year}-${values.month}-${values.day}`;
-  return bookingDate !== today || Number(values.hour) > 9 || (Number(values.hour) === 9 && Number(values.minute) >= 30);
+  return bookingDate === today && (Number(values.hour) > 9 || (Number(values.hour) === 9 && Number(values.minute) >= 30));
 }
 
 async function hasConflict(env, body, exceptId = '') {
