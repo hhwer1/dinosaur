@@ -44,8 +44,6 @@ function bookingWindowError(bookingDate, bookingSlots) {
 
 async function bookingError(env, body, exceptId = '') {
   const wanted = new Set(slotIndexes(body.slots));
-  const adminSlots = new Set([14, 15, 16, 17]);
-  if (body.studio === '1806无影棚' && [...wanted].some(slot => adminSlots.has(slot))) return '1806无影棚每天17:00—19:00由管理员占用';
   const rows = await env.DB.prepare("SELECT id, slots FROM bookings WHERE studio=? AND booking_date=? AND status='active' AND id<>?")
     .bind(body.studio, body.booking_date, exceptId).all();
   if (rows.results.some(row => slotIndexes(JSON.parse(row.slots)).some(slot => wanted.has(slot)))) return '所选时间段刚刚已被预约，请刷新后重选';
