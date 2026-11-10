@@ -1,14 +1,14 @@
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 const allowedStudios = new Set(['实景棚无影棚', '1806无影棚', '1801无影棚']);
-const slots = Array.from({ length: 27 }, (_, i) => {
-  const start = 510 + i * 30, end = start + 30;
+const slots = Array.from({ length: 24 }, (_, i) => {
+  const start = 600 + i * 30, end = start + 30;
   const time = value => `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
   return `${time(start)}—${time(end)}`;
 });
 
 function slotIndexes(values) {
   if (values.every(value => Number.isInteger(value))) {
-    return [...new Set(values.flatMap(value => value >= 0 && value <= 11 ? [1 + value * 2, 2 + value * 2] : []))];
+    return [...new Set(values.flatMap(value => value >= 1 && value <= 12 ? [2 * (value - 1), 2 * value - 1] : []))];
   }
   return values.map(value => slots.indexOf(value));
 }
@@ -36,7 +36,7 @@ function bookingWindowError(bookingDate, bookingSlots) {
   if (weekday === 0 || weekday === 6) return '无影棚仅限周一至周五预约';
   if (bookingDate !== today) return '只能预约当天的无影棚，其他日期可查看';
   const hour = Number(values.hour), minute = Number(values.minute);
-  if (hour < 8 || (hour === 8 && minute < 30)) return '每天08:30开放预约';
+  if (hour < 10) return '每天10:00开放预约';
   if (hour >= 22) return '每天22:00停止预约';
   if (bookingSlots.some(slot => slots.indexOf(slot) < 0)) return '预约时间段无效';
   return '';
@@ -44,7 +44,7 @@ function bookingWindowError(bookingDate, bookingSlots) {
 
 async function bookingError(env, body, exceptId = '') {
   const wanted = new Set(slotIndexes(body.slots));
-  const adminSlots = new Set([17, 18, 19, 20]);
+  const adminSlots = new Set([14, 15, 16, 17]);
   if (body.studio === '1806无影棚' && [...wanted].some(slot => adminSlots.has(slot))) return '1806无影棚每天17:00—19:00由管理员占用';
   const rows = await env.DB.prepare("SELECT id, slots FROM bookings WHERE studio=? AND booking_date=? AND status='active' AND id<>?")
     .bind(body.studio, body.booking_date, exceptId).all();
